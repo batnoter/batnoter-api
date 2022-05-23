@@ -179,12 +179,14 @@ func (s *service) SearchFiles(ctx context.Context, ghToken oauth2.Token, filePro
 
 // GetTree fetches the file tree from github repo using github oauth2 token and file properties.
 // It returns the file tree(without file contents) along with any error occurred while fetching it from github.
+// This api returns only markdown files having valid path, directories & non-markdown files are skipped.
 func (s *service) GetTree(ctx context.Context, ghToken oauth2.Token, fileProps GitFileProps) ([]GitFile, error) {
 	client := s.clientBuilder.Build(ctx, &ghToken)
 	sha := fileProps.SHA
 
 	if sha == "" {
-		// get the branch head commit
+		// sha is used to get the file tree at a specific revision pointed by sha
+		// if sha is not provided then get the sha of default branch's head commit
 		ref, _, err := client.Git.GetRef(ctx, fileProps.RepoDetails.Owner, fileProps.RepoDetails.Repository, fmt.Sprintf("refs/heads/%s", fileProps.RepoDetails.DefaultBranch))
 		if err != nil {
 			return []GitFile{}, errors.Wrap(err, "retrieving branch ref failed")

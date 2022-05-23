@@ -485,6 +485,152 @@ func TestSearchFiles(t *testing.T) {
 	})
 }
 
+func TestGetTree(t *testing.T) {
+	t.Run("should get the file tree from git when valid options are provided", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockClientBuilder := NewMockClientBuilder(ctrl)
+		service := NewService(mockClientBuilder)
+
+		gin.SetMode(gin.TestMode)
+		router := gin.Default()
+		server := httptest.NewServer(router)
+		defer server.Close()
+
+		// to get the details of github response structure
+		// refer - https://docs.github.com/en/rest/git/trees#get-a-tree
+		// from this response, entry at index 0 & 1 should be skipped
+		// since tree api should only return markdown files having valid path
+		treeRespJSON := `{
+			"sha": "aa218f56b14c9653891f9e74264a383fa43fefbd",
+			"url": "https://api.github.com/repos/johndoe/testrepo/trees/9fb037999f264ba9a7fc6274d15fa3ae2ab98312",
+			"tree": [
+				{
+					"path": "file.rb",
+					"mode": "100644",
+					"type": "blob",
+					"size": 30,
+					"sha": "44b4fc6d56897b048c772eb4087f854f46256132",
+					"url": "https://api.github.com/repos/johndoe/testrepo/git/blobs/44b4fc6d56897b048c772eb4087f854f46256132"
+				},
+				{
+					"path": "subdir",
+					"mode": "040000",
+					"type": "tree",
+					"sha": "f484d249c660418515fb01c2b9662073663c242e",
+					"url": "https://api.github.com/repos/johndoe/testrepo/git/blobs/f484d249c660418515fb01c2b9662073663c242e"
+				},
+				{
+					"path": "test1.md",
+					"mode": "100755",
+					"type": "blob",
+					"size": 75,
+					"sha": "45b983be36b73c0788dc9cbcb76cbb80fc7bb057",
+					"url": "https://api.github.com/repos/johndoe/testrepo/git/blobs/45b983be36b73c0788dc9cbcb76cbb80fc7bb057"
+				},
+				{
+					"path": "foo/bar/test2.md",
+					"mode": "100777",
+					"type": "blob",
+					"size": 22,
+					"sha": "333983be36b73c0788dc9cbcb76cbb80fc7bb888",
+					"url": "https://api.github.com/repos/johndoe/testrepo/git/blobs/333983be36b73c0788dc9cbcb76cbb80fc7bb888"
+				}
+			],
+			"truncated": false
+		}`
+
+		// to get the details of github response structure
+		// refer - https://docs.github.com/en/rest/git/refs#get-a-reference
+		refRespJSON := `{
+			"ref": "refs/heads/main",
+			"node_id": "MDM6UmVmcmVmcy9oZWFkcy9mZWF0dXJlQQ==",
+			"url": "https://api.github.com/repos/johndoe/testrepo/git/refs/heads/main",
+			"object": {
+				"type": "commit",
+				"sha": "aa218f56b14c9653891f9e74264a383fa43fefbd",
+				"url": "https://api.github.com/repos/johndoe/testrepo/git/commits/aa218f56b14c9653891f9e74264a383fa43fefbd"
+			}
+		}`
+		router.GET("/repos/johndoe/testrepo/git/trees/aa218f56b14c9653891f9e74264a383fa43fefbd", func(c *gin.Context) {
+			c.Data(200, "application/json; charset=utf-8", []byte(treeRespJSON))
+		})
+		router.GET("/repos/johndoe/testrepo/git/ref/heads/main", func(c *gin.Context) {
+			c.Data(200, "application/json; charset=utf-8", []byte(refRespJSON))
+		})
+		fp := GitFileProps{AuthorName: "John Doe", AuthorEmail: "johndoe@example.com", RepoDetails: GitRepoProps{Repository: "testrepo", DefaultBranch: "main", Owner: "johndoe"}}
+		githubClient := github.NewClient(nil)
+		url, _ := url.Parse(server.URL + "/")
+		githubClient.BaseURL = url
+		mockClientBuilder.EXPECT().Build(gomock.Any(), gomock.Any()).Return(githubClient)
+
+		gitFiles, err := service.GetTree(context.Background(), oauth2.Token{}, fp)
+		gitFilesJSON, _ := json.Marshal(gitFiles)
+		assert.NoError(t, err)
+		assert.JSONEq(t, `[
+			{"Content":"", "IsDir":false, "Path":"test1.md", "SHA":"45b983be36b73c0788dc9cbcb76cbb80fc7bb057", "Size":0},
+			{"Content":"", "IsDir":false, "Path":"foo/bar/test2.md", "SHA":"333983be36b73c0788dc9cbcb76cbb80fc7bb888", "Size":0}
+			]`, string(gitFilesJSON))
+	})
+
+	t.Run("should return error when tree api fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockClientBuilder := NewMockClientBuilder(ctrl)
+		service := NewService(mockClientBuilder)
+
+		gin.SetMode(gin.TestMode)
+		router := gin.Default()
+		server := httptest.NewServer(router)
+		defer server.Close()
+
+		// to get the details of github response structure
+		// refer - https://docs.github.com/en/rest/git/refs#get-a-reference
+		refRespJSON := `{
+			"ref": "refs/heads/main",
+			"node_id": "MDM6UmVmcmVmcy9oZWFkcy9mZWF0dXJlQQ==",
+			"url": "https://api.github.com/repos/johndoe/testrepo/git/refs/heads/main",
+			"object": {
+				"type": "commit",
+				"sha": "aa218f56b14c9653891f9e74264a383fa43fefbd",
+				"url": "https://api.github.com/repos/johndoe/testrepo/git/commits/aa218f56b14c9653891f9e74264a383fa43fefbd"
+			}
+		}`
+		router.GET("/repos/johndoe/testrepo/git/ref/heads/main", func(c *gin.Context) {
+			c.Data(200, "application/json; charset=utf-8", []byte(refRespJSON))
+		})
+		fp := GitFileProps{AuthorName: "John Doe", AuthorEmail: "johndoe@example.com", RepoDetails: GitRepoProps{Repository: "testrepo", DefaultBranch: "main", Owner: "johndoe"}}
+		githubClient := github.NewClient(nil)
+		url, _ := url.Parse(server.URL + "/")
+		githubClient.BaseURL = url
+		mockClientBuilder.EXPECT().Build(gomock.Any(), gomock.Any()).Return(githubClient)
+
+		_, err := service.GetTree(context.Background(), oauth2.Token{}, fp)
+		assert.Error(t, err)
+	})
+
+	t.Run("should return error when ref api fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockClientBuilder := NewMockClientBuilder(ctrl)
+		service := NewService(mockClientBuilder)
+
+		gin.SetMode(gin.TestMode)
+		router := gin.Default()
+		server := httptest.NewServer(router)
+		defer server.Close()
+
+		fp := GitFileProps{AuthorName: "John Doe", AuthorEmail: "johndoe@example.com", RepoDetails: GitRepoProps{Repository: "testrepo", DefaultBranch: "main", Owner: "johndoe"}}
+		githubClient := github.NewClient(nil)
+		url, _ := url.Parse(server.URL + "/")
+		githubClient.BaseURL = url
+		mockClientBuilder.EXPECT().Build(gomock.Any(), gomock.Any()).Return(githubClient)
+
+		_, err := service.GetTree(context.Background(), oauth2.Token{}, fp)
+		assert.Error(t, err)
+	})
+}
+
 func TestGetFile(t *testing.T) {
 	t.Run("should get the file from git when get request is valid", func(t *testing.T) {
 		ctrl := gomock.NewController(t)

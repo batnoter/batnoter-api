@@ -89,7 +89,7 @@ func (n *NoteHandler) GetNotesTree(c *gin.Context) {
 	fileProps := makeFileProps(user, NoteRequestPayload{}, "")
 	gitFiles, err := n.githubService.GetTree(c, parseOAuth2Token(user.GithubToken), fileProps)
 	if err != nil {
-		logrus.Errorf("retrieving tree on github failed")
+		logrus.WithField("user-id", user.ID).Errorf("retrieving tree on github failed")
 		abortRequestWithError(c, err)
 		return
 	}

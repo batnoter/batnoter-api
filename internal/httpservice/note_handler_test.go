@@ -91,6 +91,70 @@ func TestSearchNotes(t *testing.T) {
 	})
 }
 
+func TestGetNotesTree(t *testing.T) {
+	t.Run("should return a complete notes tree from note repository when the tree request is valid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockGithubService := github.NewMockService(ctrl)
+		mockUserService := user.NewMockService(ctrl)
+
+		router := getRouter()
+		u := validUser()
+		fp := github.GitFileProps{AuthorName: authorName, AuthorEmail: authorEmail, RepoDetails: github.GitRepoProps{Repository: repository, DefaultBranch: branch, Owner: owner}}
+		gitFiles := validGitFiles()
+		mockUserService.EXPECT().Get(userID).Return(u, nil)
+		mockGithubService.EXPECT().GetTree(gomock.Any(), getOAuth2Token(u.GithubToken), fp).Return(gitFiles, nil)
+		handler := NewNoteHandler(mockGithubService, mockUserService)
+
+		router.GET("/api/v1/tree/notes", getClaimsHandler(), handler.GetNotesTree)
+		response := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/api/v1/tree/notes", nil)
+
+		router.ServeHTTP(response, req)
+		assert.Equal(t, http.StatusOK, response.Code)
+		assert.JSONEq(t, `[{"content":"Hello", "is_dir":false, "path":"foo/bar.md", "sha":"5ab2f8a4323abafb10abb68657d9d39f1a775057", "size":5},{"content":"test2-Hello", "is_dir":false, "path":"test2/foo/bar.md", "sha":"test2-5ab2f8a4323abafb10abb68657d9d39f1a775057", "size":16}]`, response.Body.String())
+	})
+
+	t.Run("should return internal error response when the service returns error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockGithubService := github.NewMockService(ctrl)
+		mockUserService := user.NewMockService(ctrl)
+
+		router := getRouter()
+		u := validUser()
+		mockUserService.EXPECT().Get(userID).Return(u, nil)
+		mockGithubService.EXPECT().GetTree(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("some error"))
+		handler := NewNoteHandler(mockGithubService, mockUserService)
+
+		router.GET("/api/v1/tree/notes", getClaimsHandler(), handler.GetNotesTree)
+		response := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/api/v1/tree/notes", nil)
+
+		router.ServeHTTP(response, req)
+		assert.Equal(t, http.StatusInternalServerError, response.Code)
+		assert.JSONEq(t, internalServerErrJSON, response.Body.String())
+	})
+
+	t.Run("should return unauthorized response when the user service returns error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		mockGithubService := github.NewMockService(ctrl)
+		mockUserService := user.NewMockService(ctrl)
+
+		router := getRouter()
+		mockUserService.EXPECT().Get(gomock.Any()).Return(user.User{}, errors.New("some error"))
+		handler := NewNoteHandler(mockGithubService, mockUserService)
+
+		router.GET("/api/v1/tree/notes", getClaimsHandler(), handler.GetNotesTree)
+		response := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/api/v1/tree/notes", nil)
+
+		router.ServeHTTP(response, req)
+		assert.Equal(t, http.StatusUnauthorized, response.Code)
+	})
+}
+
 func TestGetNote(t *testing.T) {
 	t.Run("should return a note when the get request is valid", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
@@ -403,6 +467,19 @@ func validGitFile() github.GitFile {
 		Content: content,
 		Size:    size,
 		IsDir:   false,
+	}
+}
+
+func validGitFiles() []github.GitFile {
+	return []github.GitFile{
+		validGitFile(),
+		{
+			SHA:     "test2-" + sha,
+			Path:    "test2/" + notePath,
+			Content: "test2-" + content,
+			Size:    size + 11,
+			IsDir:   false,
+		},
 	}
 }
 
