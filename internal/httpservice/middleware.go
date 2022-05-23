@@ -14,8 +14,8 @@ type Middleware struct {
 }
 
 // NewMiddleware creates and return the middleware.
-func NewMiddleware(authservice auth.Service) *Middleware {
-	return &Middleware{authService: authservice}
+func NewMiddleware(authService auth.Service) *Middleware {
+	return &Middleware{authService: authService}
 }
 
 // AuthorizeToken retrieves and validates app token from authorization header of http request.
