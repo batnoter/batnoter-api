@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/batnoter/batnoter-api/internal/config"
 	"github.com/iamolegga/enviper"
@@ -76,7 +77,18 @@ func initConfig() {
 	if conf.Database.URL != "" {
 		// if url is set then the values of host, port, dbname, username, password, driver-name
 		// will be overridden with their respective values from url string.
+		logrus.Info("using db connection url")
 		overrideDatabaseConfigs()
+	}
+
+	// evaluate configs with values set as environment variable
+	if strings.HasPrefix(conf.HTTPServer.Host, "$") {
+		logrus.Infof("evaluating http host config from env variable: %s", conf.HTTPServer.Host)
+		conf.HTTPServer.Host = os.Expand(conf.HTTPServer.Host, os.Getenv)
+	}
+	if strings.HasPrefix(conf.HTTPServer.Port, "$") {
+		logrus.Infof("evaluating http port config from env variable: %s", conf.HTTPServer.Port)
+		conf.HTTPServer.Port = os.Expand(conf.HTTPServer.Port, os.Getenv)
 	}
 }
 
