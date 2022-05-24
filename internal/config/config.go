@@ -6,6 +6,9 @@ type App struct {
 }
 
 // Database represents configuration properties required to connect to a database.
+// The url config optional.
+// But if url is set then the values of host, port, dbname, username, password, driver-name
+// will be overridden with their respective values from url string.
 type Database struct {
 	Host       string
 	Port       string
@@ -14,6 +17,7 @@ type Database struct {
 	Password   string
 	DriverName string
 	SSLMode    string
+	URL        string
 	Debug      bool
 }
 

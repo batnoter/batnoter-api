@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"net"
+	"net/url"
 	"os"
+	"path"
 
 	"github.com/batnoter/batnoter-api/internal/config"
 	"github.com/iamolegga/enviper"
@@ -32,14 +35,14 @@ func Execute() {
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
+	// here you will define your flags and configuration settings.
+	// cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
 	initLogger()
 	initConfig()
 
-	// Cobra also supports local flags, which will only run
+	// cobra also supports local flags, which will only run
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
@@ -51,7 +54,7 @@ func initLogger() {
 }
 
 func initConfig() {
-	// The enviper is a wrapper over viper that loads the config from file & overrides
+	// enviper is a wrapper over viper that loads the config from file & overrides
 	// them with env variables if available. If the config file is missing it simply ignores it
 	e := enviper.New(viper.New())
 	e.SetDefault("httpserver.host", "0.0.0.0")
@@ -69,4 +72,43 @@ func initConfig() {
 	if err := e.Unmarshal(&conf); err == nil {
 		logrus.Infof("using the config file: %s", e.ConfigFileUsed())
 	}
+
+	if conf.Database.URL != "" {
+		// if url is set then the values of host, port, dbname, username, password, driver-name
+		// will be overridden with their respective values from url string.
+		overrideDatabaseConfigs()
+	}
+}
+
+func overrideDatabaseConfigs() {
+	u := parseDatabaseURL(conf.Database.URL)
+	host, port, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		logrus.Fatal("error occurred while retrieving db host and post: ", err)
+	}
+	conf.Database.Host = host
+	conf.Database.Port = port
+	conf.Database.DriverName = u.Scheme
+	conf.Database.Username = u.User.Username()
+	conf.Database.Password = password(u)
+	conf.Database.DBName = path.Base(u.Path)
+	if len(u.Query()["sslmode"]) > 0 {
+		conf.Database.SSLMode = u.Query()["sslmode"][0]
+	}
+}
+
+func parseDatabaseURL(dbURL string) url.URL {
+	u, err := url.Parse(dbURL)
+	if err != nil {
+		logrus.Fatal("error occurred while parsing database url: ", err)
+	}
+	return *u
+}
+
+func password(u url.URL) string {
+	password, isSet := u.User.Password()
+	if !isSet {
+		logrus.Fatal("database connection password must be set")
+	}
+	return password
 }
