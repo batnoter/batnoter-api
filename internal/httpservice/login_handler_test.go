@@ -9,14 +9,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/batnoter/batnoter-api/internal/auth"
+	"github.com/batnoter/batnoter-api/internal/github"
+	"github.com/batnoter/batnoter-api/internal/preference"
+	"github.com/batnoter/batnoter-api/internal/user"
 	"github.com/golang/mock/gomock"
 	gh "github.com/google/go-github/v43/github"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/vivekweb2013/batnoter/internal/auth"
-	"github.com/vivekweb2013/batnoter/internal/github"
-	"github.com/vivekweb2013/batnoter/internal/preference"
-	"github.com/vivekweb2013/batnoter/internal/user"
 	"golang.org/x/oauth2"
 	"gorm.io/gorm"
 )

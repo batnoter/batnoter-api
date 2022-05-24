@@ -12,6 +12,7 @@
 tests
 _site
 CONTRIBUTING.md
+CODE_OF_CONDUCT.md
 Dockerfile
 Dockerfile.archive
 docker-compose.yml

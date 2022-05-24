@@ -1,6 +1,6 @@
 package main
 
-import "github.com/vivekweb2013/batnoter/cmd"
+import "github.com/batnoter/batnoter-api/cmd"
 
 func main() {
 	cmd.Execute()

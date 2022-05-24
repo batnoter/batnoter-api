@@ -1,10 +1,10 @@
 package cmd
 
 import (
+	"github.com/batnoter/batnoter-api/internal/applicationconfig"
+	"github.com/batnoter/batnoter-api/internal/db"
+	"github.com/batnoter/batnoter-api/internal/httpservice"
 	"github.com/spf13/cobra"
-	"github.com/vivekweb2013/batnoter/internal/applicationconfig"
-	"github.com/vivekweb2013/batnoter/internal/db"
-	"github.com/vivekweb2013/batnoter/internal/httpservice"
 )
 
 // serveCmd represents the serve command

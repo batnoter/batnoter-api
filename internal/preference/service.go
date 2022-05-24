@@ -22,10 +22,7 @@ func NewService(repo Repo) Service {
 // Save stores the user default repository.
 // It returns any error occurred while storing it.
 func (s *serviceImpl) Save(defaultRepo DefaultRepo) error {
-	if err := s.repo.Save(defaultRepo); err != nil {
-		return err
-	}
-	return nil
+	return s.repo.Save(defaultRepo)
 }
 
 // GetByUserID retrieves user's default repository.

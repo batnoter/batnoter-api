@@ -54,8 +54,5 @@ func (s *service) Save(user User) (uint, error) {
 // Delete deletes the user with given user id.
 // It returns any error occurred while deleting the user.
 func (s *service) Delete(userID uint) error {
-	if err := s.repo.Delete(userID); err != nil {
-		return err
-	}
-	return nil
+	return s.repo.Delete(userID)
 }

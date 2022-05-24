@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/vivekweb2013/batnoter/internal/applicationconfig"
+	"github.com/batnoter/batnoter-api/internal/applicationconfig"
 )
 
 // Run starts the http server.

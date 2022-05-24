@@ -1,11 +1,21 @@
-# BatNoter Backend Module
-This is the backend service of batnoter application.
+## BatNoter API Module
 
-## Start the backend service
-There are several ways to start backend service. Refer any one of the following method
-### Run application locally with make & go
-#### Setup & start database
-Make sure docker is installed on the system. Below commands use docker to start the database container
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/batnoter/batnoter-api/Test/main?color=forestgreen)](https://github.com/batnoter/batnoter-api/actions?query=branch%3Amain)
+[![codecov](https://codecov.io/gh/batnoter/batnoter-api/branch/main/graph/badge.svg?token=pWRurWucMC)](https://codecov.io/gh/batnoter/batnoter-api)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/f13246b96cd047b5b5dddcbceb2cad9e)](https://www.codacy.com/gh/batnoter/batnoter-api/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=batnoter/batnoter-api&amp;utm_campaign=Badge_Grade)
+
+This is the api service of batnoter application built with golang.
+
+It exposes ReST endpoints to access and manage markdown notes from user's git repository. Currently it only supports github repository for storing & managing notes.
+
+### Local Development Setup
+
+#### Prerequisites
+*   Go version `1.18` or above
+*   Docker Desktop
+
+#### Start postgres database container
+Below commands use docker to start the database container.
 ```shell
 make network
 make postgres
@@ -13,80 +23,28 @@ make createdb
 ```
 
 #### Create configuration file from template
+The `config.yaml` is the configuration template file containing default config values.
 ```shell
-cp batnoter.yaml .batnoter.yaml
+cp config.yaml .config.yaml
 ```
+Application uses `.config.yaml` file to get the config values. Please update placeholder-values from this config file to the actual ones. 
 
 #### Start the server
-Make sure that the `.batnoter.yaml` file is configured correctly & database is up.
+Make sure that the `.config.yaml` file is configured correctly & database container is up & running.
+Then run the below commands to setup the db schema and start the web server.
 ```shell
 go run main.go migrateup
 go run main.go serve
 ```
+This will start the server on port specified in `.config.yaml` file. You can now access the api endpoints.
 
-### Build & run backend service locally using executable
-#### Build the backend service
+#### Run tests
 ```shell
-go build
+go test -v -cover ./...
 ```
-This will build the service & generate executable file.
+This will execute all the tests and also prints the code coverage percentage.
 
-#### Create configuration file from template
-```shell
-cp batnoter.yaml .batnoter.yaml
-```
+### Contribution Guidelines
+> Every Contribution Makes a Difference
 
-#### Start http server
-Make sure that the `.batnoter.yaml` file is configured correctly & database is up.
-```shell
-./batnoter migrateup
-./batnoter serve
-```
-
-### Build docker image & run the application with docker locally
-#### Build docker image locally
-```shell
-docker build -t batnoter-backend:latest .
-```
-
-#### Start containers with required configuration
-```shell
-# setup pre-requisite
-docker network create gn-network
-docker run --name postgres12 --network gn-network -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:12-alpine
-docker exec -it postgres12 createdb --username=root --owner=root bn_db
-docker exec -it postgres12 sh -c "psql -U root -d bn_db -c \"CREATE SCHEMA IF NOT EXISTS batnoter;\" "
-
-# inspect the ip-address of postgres container
-docker inspect <postgres-container-id>
-
-# run migration (replace '<postgres-container-ip>' with the actual ip-address)
-docker run --network gn-network -it \
--e DATABASE_HOST='<postgres-container-ip>' \
--e DATABASE_PORT='5432' \
--e DATABASE_DBNAME='bn_db' \
--e DATABASE_USERNAME='root' \
--e DATABASE_PASSWORD='secret' \
--e DATABASE_SSLMODE='disable' \
--e DATABASE_DEBUG='true' \
-batnoter-backend /app/batnoter migrateup
-
-# start server (replace '<postgres-container-ip>' with the actual ip-address)
-docker run --network gn-network -it \
--e SECRETKEY='secret' \
--e DATABASE_HOST='<postgres-container-ip>' \
--e DATABASE_PORT='5432' \
--e DATABASE_DBNAME='bn_db' \
--e DATABASE_USERNAME='root' \
--e DATABASE_PASSWORD='secret' \
--e DATABASE_SSLMODE='disable' \
--e DATABASE_DEBUG='true' \
--e HTTPSERVER_DEBUG='true' \
--e OAUTH2_GITHUB_CLIENTID='<github_client_id>' \
--e OAUTH2_GITHUB_CLIENTSECRET='<github_client_secret>' \
--e OAUTH2_GITHUB_REDIRECTURL='http://localhost:3000/api/v1/oauth2/github/callback' \
--p 8080:8080 \
-batnoter-backend
-```
-
-This will start the server on the specified port.
+Read the [Contribution Guidelines](CONTRIBUTING.md) before you contribute.

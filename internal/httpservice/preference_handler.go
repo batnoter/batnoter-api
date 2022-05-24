@@ -5,11 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/batnoter/batnoter-api/internal/github"
+	"github.com/batnoter/batnoter-api/internal/preference"
+	"github.com/batnoter/batnoter-api/internal/user"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/sirupsen/logrus"
-	"github.com/vivekweb2013/batnoter/internal/github"
-	"github.com/vivekweb2013/batnoter/internal/preference"
-	"github.com/vivekweb2013/batnoter/internal/user"
 )
 
 // RepoPayload represents the http request/response payload of repository entity.

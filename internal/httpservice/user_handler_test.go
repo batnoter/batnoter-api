@@ -9,9 +9,9 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/batnoter/batnoter-api/internal/user"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"github.com/vivekweb2013/batnoter/internal/user"
 )
 
 func TestProfile(t *testing.T) {

@@ -8,12 +8,12 @@ database:
   username: root
   password: secret
   sslMode: disable
-  debug: false
+  debug: true
 
 httpServer:
   host: localhost
   port: 8080
-  debug: false
+  debug: true
 
 oAuth2:
   github:

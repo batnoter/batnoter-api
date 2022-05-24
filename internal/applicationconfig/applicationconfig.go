@@ -1,11 +1,11 @@
 package applicationconfig
 
 import (
-	"github.com/vivekweb2013/batnoter/internal/auth"
-	"github.com/vivekweb2013/batnoter/internal/config"
-	"github.com/vivekweb2013/batnoter/internal/github"
-	"github.com/vivekweb2013/batnoter/internal/preference"
-	"github.com/vivekweb2013/batnoter/internal/user"
+	"github.com/batnoter/batnoter-api/internal/auth"
+	"github.com/batnoter/batnoter-api/internal/config"
+	"github.com/batnoter/batnoter-api/internal/github"
+	"github.com/batnoter/batnoter-api/internal/preference"
+	"github.com/batnoter/batnoter-api/internal/user"
 	"golang.org/x/oauth2"
 	gh "golang.org/x/oauth2/github"
 	"gorm.io/gorm"

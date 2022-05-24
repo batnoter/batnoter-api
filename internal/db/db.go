@@ -3,7 +3,7 @@ package db
 import (
 	"fmt"
 
-	"github.com/vivekweb2013/batnoter/internal/config"
+	"github.com/batnoter/batnoter-api/internal/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

@@ -3,16 +3,16 @@ package cmd
 import (
 	"os"
 
+	"github.com/batnoter/batnoter-api/internal/config"
 	"github.com/iamolegga/enviper"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/vivekweb2013/batnoter/internal/config"
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "batnoter",
+	Use:   "batnoter-api",
 	Short: "A simple note taking app",
 	Long:  `A simple web application to store and retrieve notes`,
 	// Uncomment the following line if your bare application
@@ -58,12 +58,12 @@ func initConfig() {
 	e.SetDefault("httpserver.port", "8080")
 
 	var cfgFile string
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is .batnoter.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is .config.yaml)")
 	if cfgFile != "" {
 		e.SetConfigFile(cfgFile)
 	} else {
 		e.AddConfigPath(".")
-		e.SetConfigName(".batnoter")
+		e.SetConfigName(".config")
 	}
 
 	if err := e.Unmarshal(&conf); err == nil {

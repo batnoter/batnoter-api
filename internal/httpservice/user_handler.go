@@ -8,8 +8,8 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/batnoter/batnoter-api/internal/user"
 	"github.com/sirupsen/logrus"
-	"github.com/vivekweb2013/batnoter/internal/user"
 )
 
 // UserResponsePayload represents the http response payload of user entity.

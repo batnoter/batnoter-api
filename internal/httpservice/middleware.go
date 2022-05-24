@@ -5,7 +5,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"github.com/vivekweb2013/batnoter/internal/auth"
+	"github.com/batnoter/batnoter-api/internal/auth"
 )
 
 // Middleware represents a http middleware used primarily for authorization.

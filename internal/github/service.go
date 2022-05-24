@@ -40,12 +40,15 @@ func NewService(clientBuilder ClientBuilder) Service {
 }
 
 const (
-	fileType           = "file"
-	blobType           = "blob"
-	commitMessage      = "Created with BatNoter"
-	affiliation        = "owner"
-	fileExtension      = "md"
-	pageSize           = 20
+	fileType      = "file"
+	blobType      = "blob"
+	commitMessage = "Created with BatNoter"
+	affiliation   = "owner"
+	fileExtension = "md"
+	pageSize      = 20
+
+	// ValidFilePathRegex validates the file path of the files stored/retrieved to/from github.
+	// We only allow markdown files with or without parent directories.
 	ValidFilePathRegex = `(?m)^([a-zA-Z0-9-]([/][a-zA-Z0-9-])?[^\S\r\n]?[a-zA-Z0-9-]?)+(\.md)$`
 )
 

@@ -5,12 +5,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/batnoter/batnoter-api/internal/auth"
+	"github.com/batnoter/batnoter-api/internal/github"
+	"github.com/batnoter/batnoter-api/internal/user"
 	gh "github.com/google/go-github/v43/github"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
-	"github.com/vivekweb2013/batnoter/internal/auth"
-	"github.com/vivekweb2013/batnoter/internal/github"
-	"github.com/vivekweb2013/batnoter/internal/user"
 )
 
 // LoginHandler represents http handler for serving user login actions.

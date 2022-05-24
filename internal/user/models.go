@@ -3,7 +3,7 @@ package user
 import (
 	"time"
 
-	"github.com/vivekweb2013/batnoter/internal/preference"
+	"github.com/batnoter/batnoter-api/internal/preference"
 	"gorm.io/gorm"
 )
 
