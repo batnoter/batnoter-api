@@ -5,21 +5,39 @@ on:
     branches:
       - main
 
+env:
+  HEROKU_APP_NAME: batnoter
+
 jobs:
 
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: Production
-      url: 'https://batnoter.com'
-
+    env:
+      GITHUB_REPO_REGISTRY: ghcr.io/${{ github.repository_owner }}/batnoter
     steps:
     - uses: actions/checkout@v2
 
-    - name: setup go
-      uses: actions/setup-go@v2
+    - name: build docker image
+      env:
+        COMMIT_SHA: ${{ github.sha }}
+        HEROKU_PROCESS_TYPE: web
+      run: |
+        docker build \
+          -t registry.heroku.com/$HEROKU_APP_NAME/$HEROKU_PROCESS_TYPE \
+          -t $GITHUB_REPO_REGISTRY/${GITHUB_REPOSITORY#*/}:${GITHUB_REF##*/} \
+          -t $GITHUB_REPO_REGISTRY/${GITHUB_REPOSITORY#*/}:$COMMIT_SHA \
+          -t $GITHUB_REPO_REGISTRY/${GITHUB_REPOSITORY#*/}:latest .
+
+    - name: login to github docker registry
+      uses: docker/login-action@v1.14.1
       with:
-        go-version: ^1.18
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: publish docker image to github registry
+      run: |
+        docker push -a $GITHUB_REPO_REGISTRY/${GITHUB_REPOSITORY#*/}
 
     - name: login to heroku docker registry
       uses: docker/login-action@v1.14.1
@@ -28,11 +46,24 @@ jobs:
         username: ${{ github.repository_owner }}
         password: ${{ secrets.HEROKU_API_KEY }}
 
-    - name: deploy to heroku
+    - name: publish docker image to heroku registry
       env:
-        HEROKU_APP_NAME: batnoter
+        HEROKU_PROCESS_TYPE: web
+      run: |
+        docker push -a registry.heroku.com/$HEROKU_APP_NAME/$HEROKU_PROCESS_TYPE
+
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    environment:
+      name: Production
+      url: 'https://batnoter.com'
+
+    steps:
+    - name: publish release on heroku
+      env:
         HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
       run: |
-        heroku container:push web -a $HEROKU_APP_NAME
         heroku container:release web -a $HEROKU_APP_NAME
         heroku releases --json -n 1 -a $HEROKU_APP_NAME | grep '"succeeded"'
