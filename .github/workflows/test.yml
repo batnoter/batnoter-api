@@ -1,0 +1,27 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    # Note: GitHub does not pass secrets(for security reasons) to PR workflows created with forked repos
+    # So do not use any actions that require secrets
+    # Tee GITHUB_TOKEN secret is allowed with readonly access for PR workflows created with forked repos
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: setup go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.18
+
+    - name: run tests
+      run: go test -v -race -coverprofile=coverage.out -coverpkg=./internal/... -covermode=atomic ./internal/...
+      
+    - name: upload coverage to codecov
+      uses: codecov/codecov-action@v2
