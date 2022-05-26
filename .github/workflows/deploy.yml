@@ -5,8 +5,13 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
-  HEROKU_APP_NAME: batnoter
+  HEROKU_STAGING_APP_NAME: batnoter-staging
+  HEROKU_PRODUCTION_APP_NAME: batnoter
 
 jobs:
 
@@ -23,7 +28,8 @@ jobs:
         HEROKU_PROCESS_TYPE: web
       run: |
         docker build \
-          -t registry.heroku.com/$HEROKU_APP_NAME/$HEROKU_PROCESS_TYPE \
+          -t registry.heroku.com/$HEROKU_STAGING_APP_NAME/$HEROKU_PROCESS_TYPE \
+          -t registry.heroku.com/$HEROKU_PRODUCTION_APP_NAME/$HEROKU_PROCESS_TYPE \
           -t $GITHUB_REPO_REGISTRY/${GITHUB_REPOSITORY#*/}:${GITHUB_REF##*/} \
           -t $GITHUB_REPO_REGISTRY/${GITHUB_REPOSITORY#*/}:$COMMIT_SHA \
           -t $GITHUB_REPO_REGISTRY/${GITHUB_REPOSITORY#*/}:latest .
@@ -50,20 +56,37 @@ jobs:
       env:
         HEROKU_PROCESS_TYPE: web
       run: |
-        docker push -a registry.heroku.com/$HEROKU_APP_NAME/$HEROKU_PROCESS_TYPE
+        docker push -a registry.heroku.com/$HEROKU_STAGING_APP_NAME/$HEROKU_PROCESS_TYPE
+        docker push -a registry.heroku.com/$HEROKU_PRODUCTION_APP_NAME/$HEROKU_PROCESS_TYPE
 
-  deploy:
+  deploy-staging:
     needs: [build]
     runs-on: ubuntu-latest
 
     environment:
-      name: Production
-      url: 'https://batnoter.com'
+      name: Staging
+      url: 'https://batnoter-staging.herokuapp.com/'
 
     steps:
-    - name: publish release on heroku
+    - name: publish to staging on heroku
       env:
         HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
       run: |
-        heroku container:release web -a $HEROKU_APP_NAME
-        heroku releases --json -n 1 -a $HEROKU_APP_NAME | grep '"succeeded"'
+        heroku container:release web -a $HEROKU_STAGING_APP_NAME
+        heroku releases --json -n 1 -a $HEROKU_STAGING_APP_NAME | grep '"succeeded"'
+
+  deploy-production:
+    needs: [deploy-staging]
+    runs-on: ubuntu-latest
+
+    environment:
+      name: Production
+      url: 'https://batnoter.herokuapp.com/'
+
+    steps:
+    - name: publish to production on heroku
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+      run: |
+        heroku container:release web -a $HEROKU_PRODUCTION_APP_NAME
+        heroku releases --json -n 1 -a $HEROKU_PRODUCTION_APP_NAME | grep '"succeeded"'
