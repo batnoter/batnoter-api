@@ -3,6 +3,7 @@ package config
 // App represents configuration properties specific to the application.
 type App struct {
 	SecretKey string
+	ClientURL string
 }
 
 // Database represents configuration properties required to connect to a database.

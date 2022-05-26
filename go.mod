@@ -5,6 +5,7 @@ go 1.18
 require github.com/spf13/cobra v1.4.0
 
 require (
+	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/google/go-github/v43 v43.0.0

@@ -27,6 +27,7 @@ const (
 	name            = "John Doe"
 	location        = "New York"
 	avatarURL       = "http://example.com/avatar"
+	clientURL       = "http://example.com/ui"
 	oauth2TokenJSON = `{"access_token":"gho_token","token_type":"bearer","expiry":"0001-01-01T00:00:00Z"}`
 )
 
@@ -40,7 +41,7 @@ func TestGithubLogin(t *testing.T) {
 
 		gin.SetMode(gin.TestMode)
 		router := gin.Default()
-		handler := NewLoginHandler(nil, githubService, nil)
+		handler := NewLoginHandler(nil, githubService, nil, "")
 		githubService.EXPECT().GetAuthCodeURL(gomock.Any()).Return("/")
 
 		router.GET("/api/v1/oauth2/login/github", handler.GithubLogin)
@@ -53,7 +54,7 @@ func TestGithubLogin(t *testing.T) {
 }
 
 func TestGithubOAuth2Callback(t *testing.T) {
-	t.Run("should save the user(with token) & return token response when callback invoked", func(t *testing.T) {
+	t.Run("should save the user(with token) & redirect with token cookie when callback invoked", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		authService := auth.NewMockService(ctrl)
@@ -69,7 +70,7 @@ func TestGithubOAuth2Callback(t *testing.T) {
 
 		gin.SetMode(gin.TestMode)
 		router := gin.Default()
-		handler := NewLoginHandler(authService, githubService, userService)
+		handler := NewLoginHandler(authService, githubService, userService, clientURL)
 		githubService.EXPECT().GetToken(gomock.Any(), authCode).Return(oauthToken, nil)
 		githubService.EXPECT().GetUser(gomock.Any(), oauthToken).Return(githubUser, nil)
 		userService.EXPECT().GetByEmail(email).Return(dbUser, nil)
@@ -89,8 +90,52 @@ func TestGithubOAuth2Callback(t *testing.T) {
 		req.AddCookie(&cookie)
 
 		router.ServeHTTP(response, req)
+		assert.Equal(t, http.StatusFound, response.Code)
+		assert.Contains(t, response.Header().Get("Set-Cookie"), appToken)
+		assert.Equal(t, clientURL+"/login?success=true", response.Header().Get("Location"))
+	})
+}
+
+func TestTokenPayload(t *testing.T) {
+	t.Run("should return token in response payload when request contains token cookie", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		gin.SetMode(gin.TestMode)
+		router := gin.Default()
+		handler := NewLoginHandler(nil, nil, nil, "")
+
+		router.GET("/auth/token", handler.TokenPayload)
+		response := httptest.NewRecorder()
+		cookie := http.Cookie{
+			Name:     "token",
+			Value:    "test-token",
+			Path:     "/",
+			Expires:  time.Now().Add(1 * time.Minute),
+			HttpOnly: true,
+		}
+		req, _ := http.NewRequest(http.MethodGet, "/auth/token", nil)
+		req.AddCookie(&cookie)
+
+		router.ServeHTTP(response, req)
 		assert.Equal(t, http.StatusOK, response.Code)
-		assert.Contains(t, response.Body.String(), appToken)
+		assert.Equal(t, "test-token", response.Body.String())
+	})
+
+	t.Run("should return unauthorized error response when request doesn't contains token cookie", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		gin.SetMode(gin.TestMode)
+		router := gin.Default()
+		handler := NewLoginHandler(nil, nil, nil, "")
+
+		router.GET("/auth/token", handler.TokenPayload)
+		response := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/auth/token", nil)
+
+		router.ServeHTTP(response, req)
+		assert.Equal(t, http.StatusUnauthorized, response.Code)
 	})
 }
 
