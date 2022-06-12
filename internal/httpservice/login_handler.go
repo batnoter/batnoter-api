@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/batnoter/batnoter-api/internal/auth"
 	"github.com/batnoter/batnoter-api/internal/github"
 	"github.com/batnoter/batnoter-api/internal/user"
+	"github.com/gin-gonic/gin"
 	gh "github.com/google/go-github/v43/github"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -102,7 +102,7 @@ func (l *LoginHandler) GithubOAuth2Callback(c *gin.Context) {
 	}
 
 	// set the token cookie
-	c.SetSameSite(http.SameSiteNoneMode)
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie("token", appToken, 60, "/", c.Request.URL.Hostname(), true, true)
 
 	// redirect to client
@@ -121,8 +121,8 @@ func (l *LoginHandler) TokenPayload(c *gin.Context) {
 	}
 
 	// delete the token cookie
-	c.SetSameSite(http.SameSiteNoneMode)
-	c.SetCookie("token", "", 0, "/", c.Request.URL.Hostname(), true, true)
+	c.SetSameSite(http.SameSiteStrictMode)
+	c.SetCookie("token", "", -1, "/", c.Request.URL.Hostname(), true, true)
 
 	// send token as response payload
 	c.String(http.StatusOK, token)
