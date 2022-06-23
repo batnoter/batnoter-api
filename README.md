@@ -48,3 +48,6 @@ This will execute all the tests and also prints the code coverage percentage.
 > Every Contribution Makes a Difference
 
 Read the [Contribution Guidelines](CONTRIBUTING.md) before you contribute.
+
+### Special Thanks
+[![JetBrains Logo (Main) logo](https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg)](https://jb.gg/OpenSourceSupport)
